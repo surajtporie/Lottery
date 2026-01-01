@@ -264,7 +264,13 @@
         txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
         if (type === 'live') saveDay();
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
+    }// നമ്പർ ബോക്സിൽ 3 അക്കം ആയാൽ ഉടൻ കൗണ്ട് ബോക്സിലേക്ക് മാറാൻ
+document.getElementById("num").addEventListener("input", function() {
+    if (this.value.length === 3) {
+        document.getElementById("count").focus();
     }
+});
+
     initTabs();
 </script>
 </body>
