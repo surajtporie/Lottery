@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lottery Entry</title>
+<style>
+    body{ margin:0; font-family: Arial, sans-serif; background:#333; color: #000; }
+    .screen{ min-height:100vh; display:flex; justify-content:center; align-items:center; padding:10px; }
+    .card{ width:100%; max-width:420px; background:#fff; border-radius:12px; padding:15px; box-sizing: border-box; }
+    h2{ text-align:center; margin:5px 0 10px }
+    input, button{ width:100%; padding:12px; margin:5px 0; font-size:16px; border:1px solid #ccc; border-radius:6px; box-sizing: border-box; }
+    .row{ display:flex; gap:5px }
+    .row > *{ flex:1 }
+    button{ background:#ffc107; border:none; font-weight:bold; cursor:pointer; }
+    button:active{ opacity:0.8; }
+    .list{ margin-top:10px; max-height:250px; overflow-y:auto; border:1px solid #eee; }
+    .item{ display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #ddd; }
+    .total{ text-align:right; font-weight:bold; margin-top:10px; font-size:18px; color: #d32f2f; }
+    .hidden{ display:none }
+    .save-btn{ background: #4CAF50; color: white; }
+    .back-btn{ background: #607D8B; color: white; }
+    .clear-btn{ background: #f44336; color: white; }
+    .step-box { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #ccc; }
+</style>
+</head>
+<body>
+
+<div class="screen" id="mainPage">
+    <div class="card">
+        <h2>Lottery Entry</h2>
+        <input id="customer" placeholder="Customer Name">
+        <div class="row">
+            <button onclick="share('live')">WHATSAPP</button>
+            <button onclick="resetAll()">RESET</button>
+            <button class="save-btn" onclick="saveDay()">SAVE</button>
+        </div>
+        
+        <div id="normalInput">
+            <div class="row">
+                <input id="num" placeholder="3 Digit" maxlength="3" type="tel">
+                <input id="count" placeholder="Count" type="tel">
+            </div>
+        </div>
+
+        <div id="stepInput" class="step-box hidden">
+            <p style="margin:0 0 5px; font-weight:bold; font-size:14px; color:#555;">Step Mode (Range Entry)</p>
+            <div class="row">
+                <input id="startNum" placeholder="Start" maxlength="3" type="tel">
+                <input id="endNum" placeholder="End" maxlength="3" type="tel">
+            </div>
+            <input id="stepCount" placeholder="Count for Step" type="tel">
+            <button class="save-btn" onclick="processStep()">ADD RANGE</button>
+        </div>
+
+        <div class="row">
+            <button onclick="addEntry()">ADD</button>
+            <button onclick="boxEntry()">BOX</button>
+            <button id="stepToggleBtn" onclick="toggleStep()">STEP</button>
+        </div>
+
+        <div class="list" id="liveList"></div>
+        <div class="total" id="liveTotal">T = 0</div>
+        <button style="margin-top:15px; background:#2196F3; color:white;" onclick="openSaved()">SAVED DATA</button>
+    </div>
+</div>
+
+<div class="screen hidden" id="savedPage">
+    <div class="card">
+        <h2>Saved History</h2>
+        <div class="row">
+            <button style="background:#673AB7; color:white;" onclick="renderSaved(true)">MERGE & SORT</button>
+            <button style="background:#25D366; color:white;" onclick="share('saved')">WA SHARE</button>
+        </div>
+        <div class="list" id="savedList"></div>
+        <div id="savedTotal" class="total"></div>
+        <div class="row" style="margin-top:10px;">
+            <button class="clear-btn" onclick="clearPermanent()">CLEAR ALL</button>
+            <button class="back-btn" onclick="backToMain()">BACK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let temp = JSON.parse(localStorage.getItem("temp_list")) || [];
+    let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
+    let isMergedView = false;
+
+    const numInp = document.getElementById("num");
+    const countInp = document.getElementById("count");
+
+    numInp.addEventListener("input", () => {
+        if (numInp.value.length === 3) countInp.focus();
+    });
+
+    countInp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addEntry();
+    });
+
+    function renderLive() {
+        let html = "";
+        let total = 0;
+        [...temp].reverse().forEach(item => {
+            html += `<div class="item"><span>${item.n}</span><span>${item.c}</span></div>`;
+            total += Number(item.c);
+        });
+        document.getElementById("liveList").innerHTML = html;
+        document.getElementById("liveTotal").innerText = "T = " + total;
+        localStorage.setItem("temp_list", JSON.stringify(temp));
+    }
+    renderLive();
+
+    function addEntry() {
+        let n = numInp.value;
+        let c = countInp.value;
+        if (n.length !== 3 || c === "") return;
+        temp.push({ n: n, c: Number(c) });
+        clearAndFocus();
+    }
+
+    function boxEntry() {
+        let n = numInp.value;
+        let c = countInp.value;
+        if (n.length !== 3 || c === "") return alert("നമ്പറും കൗണ്ടും നൽകുക");
+        let results = new Set();
+        let digits = n.split('');
+        function permute(arr, m = []) {
+            if (arr.length === 0) results.add(m.join(''));
+            else {
+                for (let i = 0; i < arr.length; i++) {
+                    let curr = arr.slice();
+                    let next = curr.splice(i, 1);
+                    permute(curr.slice(), m.concat(next));
+                }
+            }
+        }
+        permute(digits);
+        results.forEach(val => temp.push({ n: val, c: Number(c) }));
+        clearAndFocus();
+    }
+
+    function toggleStep() {
+        const normalInput = document.getElementById("normalInput");
+        const stepInput = document.getElementById("stepInput");
+        if (stepInput.classList.contains("hidden")) {
+            normalInput.classList.add("hidden");
+            stepInput.classList.remove("hidden");
+        } else {
+            normalInput.classList.remove("hidden");
+            stepInput.classList.add("hidden");
+        }
+    }
+
+    function processStep() {
+        let start = document.getElementById("startNum").value;
+        let end = document.getElementById("endNum").value;
+        let c = document.getElementById("stepCount").value;
+        if (start.length !== 3 || end.length !== 3 || c === "") return alert("നമ്പറുകൾ ചെക്ക് ചെയ്യുക");
+        let s = Number(start), e = Number(end), countVal = Number(c);
+        if (s > e) return alert("Start number വലുതാവാൻ പാടില്ല");
+        for (let i = s; i <= e; i++) {
+            temp.push({ n: String(i).padStart(3, '0'), c: countVal });
+        }
+        document.getElementById("startNum").value = "";
+        document.getElementById("endNum").value = "";
+        document.getElementById("stepCount").value = "";
+        toggleStep();
+        renderLive();
+        numInp.focus();
+    }
+
+    function clearAndFocus() {
+        numInp.value = ""; 
+        countInp.value = "";
+        renderLive();
+        numInp.focus();
+    }
+
+    function saveDay() {
+        if (temp.length === 0) return;
+        permanent = permanent.concat(temp);
+        localStorage.setItem("perm_list", JSON.stringify(permanent));
+        temp = [];
+        localStorage.removeItem("temp_list");
+        renderLive();
+    }
+
+    function resetAll() {
+        if (confirm("നിലവിലെ ലിസ്റ്റ് മാറ്റണോ?")) { temp = []; renderLive(); }
+    }
+
+    function openSaved() {
+        document.getElementById("mainPage").classList.add("hidden");
+        document.getElementById("savedPage").classList.remove("hidden");
+        renderSaved(false);
+    }
+
+    function backToMain() {
+        document.getElementById("savedPage").classList.add("hidden");
+        document.getElementById("mainPage").classList.remove("hidden");
+    }
+
+    function renderSaved(merge) {
+        isMergedView = merge;
+        let data = JSON.parse(localStorage.getItem("perm_list")) || [];
+        if (merge) {
+            let mergedObj = {};
+            data.forEach(item => { mergedObj[item.n] = (mergedObj[item.n] || 0) + Number(item.c); });
+            data = Object.entries(mergedObj).map(([n, c]) => ({ n, c })).sort((a, b) => b.c - a.c);
+        }
+        let html = "", total = 0;
+        data.forEach(item => {
+            html += `<div class="item"><span>${item.n}</span><span>${item.c}</span></div>`;
+            total += Number(item.c);
+        });
+        document.getElementById("savedList").innerHTML = html || "No Data Saved";
+        document.getElementById("savedTotal").innerText = "TOTAL = " + total;
+    }
+
+    // Permanent Data ക്ലിയർ ചെയ്യാൻ
+    function clearPermanent() {
+        if (confirm("സേവ് ചെയ്ത എല്ലാ ഡാറ്റയും ഡിലീറ്റ് ചെയ്യണോ?")) {
+            permanent = [];
+            localStorage.removeItem("perm_list");
+            renderSaved(false);
+        }
+    }
+
+    function share(type) {
+        let name = document.getElementById("customer").value || "No Name";
+        let data = (type === 'live') ? temp : (JSON.parse(localStorage.getItem("perm_list")) || []);
+        
+        if (type === 'saved' && isMergedView) {
+            let mergedObj = {};
+            data.forEach(item => { mergedObj[item.n] = (mergedObj[item.n] || 0) + Number(item.c); });
+            data = Object.entries(mergedObj).map(([n, c]) => ({ n, c })).sort((a, b) => b.c - a.c);
+        }
+
+        if (data.length === 0) return alert("ഷെയർ ചെയ്യാൻ ലിസ്റ്റ് ശൂന്യമാണ്");
+
+        let txt = `*${name}*\n----------\n`;
+        let total = 0;
+        data.forEach(i => {
+            txt += `${i.n} = ${i.c}\n`;
+            total += Number(i.c);
+        });
+        txt += `----------\n*Total: ${total}*`;
+
+        if (type === 'live') {
+            saveDay();
+        }
+
+        window.open("https://wa.me/?text=" + encodeURIComponent(txt));
+    }
+</script>
+</body>
+</html>
