@@ -3,88 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lottery Pro Max - Speed Voice</title>
+<title>Lottery Pro Max - Advanced Step</title>
 <style>
-    :root { --bg: #f4f7f6; --card-bg: #ffffff; --text: #333; --primary: #2196F3; --secondary: #ffc107; --success: #4CAF50; --danger: #f44336; --border: #ddd; }
-    body.dark-mode { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --border: #333; }
-    body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; }
-    .screen { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
-    .card { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
-    .header-tools { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .theme-toggle { cursor: pointer; background: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 20px; color: var(--text); font-size: 11px; }
-    .tabs-container { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border); }
-    .tab { padding: 8px 15px; background: #eee; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; color: #555; }
-    .tab.active { background: var(--primary); color: white; }
-    .add-tab { padding: 8px 15px; background: var(--success); color: white; border-radius: 20px; cursor: pointer; font-weight: bold; }
-    input, button { width: 100%; padding: 12px; margin: 5px 0; font-size: 16px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: var(--card-bg); color: var(--text); }
-    .row { display: flex; gap: 8px; }
+    :root { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --primary: #7b1fa2; --secondary: #00c853; --danger: #d32f2f; --border: #333; }
+    body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 10px; }
+    .card { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 15px; padding: 20px; box-sizing: border-box; }
+    input, button, textarea { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: #2c2c2c; color: white; }
+    .row { display: flex; gap: 8px; align-items: center; }
     .row > * { flex: 1; }
-    button { font-weight: bold; cursor: pointer; border: none; }
-    .wa-btn { background: #25D366; color: white; }
-    .voice-btn { background: #E91E63; color: white; transition: 0.3s; }
-    .add-btn { background: var(--primary); color: white; }
-    .box-btn { background: var(--secondary); color: #000; }
-    .reset-btn { background: #757575; color: white; }
-    .save-btn { background: var(--success); color: white; }
-    .list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
-    .item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
-    .del-btn { background: none; color: var(--danger); width: auto; padding: 5px; font-size: 18px; }
-    .total-section { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: var(--primary); color: white; border-radius: 8px; font-weight: bold; font-size: 18px; }
-    .hidden { display: none; }
-    .status-voice { text-align: center; color: #E91E63; font-weight: bold; font-size: 14px; margin: 5px 0; display: none; }
+    button { font-weight: bold; cursor: pointer; border: none; text-transform: uppercase; }
+    .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; }
+    .tab { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .tab.active { background: var(--primary); color: white; }
+    .list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #181818; }
+    .item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); }
+    .total-section { display: flex; justify-content: space-between; padding: 12px; background: #333; border-radius: 8px; margin-top: 10px; font-weight: bold; }
+    .win-item { background: #1b5e20; color: #fff; margin-bottom: 2px; }
+    .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
-
 <div class="screen" id="mainPage">
     <div class="card">
-        <div class="header-tools">
-            <h3 style="margin:0; color:var(--primary);">Lottery Voice Pro</h3>
-            <button class="theme-toggle" onclick="toggleTheme()">DARK MODE</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0; color:var(--primary);">Lottery Smart Pro</h3>
+            <button onclick="resetTab()" style="width:auto; font-size:11px; background:var(--danger); padding:5px 10px;">RESET</button>
         </div>
-        <div class="tabs-container" id="tabsList"></div>
-        <input id="customer" placeholder="Customer Name" oninput="updateTabName()">
+        
+        <div class="tabs" id="tabsList"></div>
+        <input id="customer" placeholder="കസ്റ്റമർ പേര്" oninput="updateTabName()">
         
         <div class="row">
-            <button class="voice-btn" id="voiceBtn" onclick="startVoice()">🎤 വോയ്‌സ്</button>
-            <button class="wa-btn" onclick="share('live')">WHATSAPP</button>
-        </div>
-        <div id="voiceStatus" class="status-voice">ശ്രദ്ധിക്കുന്നു... (സംസാരിക്കുക)</div>
-
-        <div id="normalInput">
-            <div class="row">
-                <input id="num" placeholder="Number" maxlength="3" type="tel">
-                <input id="count" placeholder="Count" type="tel">
-            </div>
+            <input id="num" placeholder="No" maxlength="3" type="tel">
+            <input id="endNum" class="hidden" placeholder="End" maxlength="3" type="tel">
+            <input id="gap" class="hidden" placeholder="Gap" type="tel" value="1">
+            <input id="count" placeholder="Count" type="tel">
         </div>
 
         <div class="row">
-            <button class="add-btn" onclick="addEntry()">ADD</button>
-            <button class="box-btn" onclick="boxEntry()">BOX</button>
+            <button id="addBtn" style="background:var(--primary);" onclick="addEntry()">ADD</button>
+            <button style="background:#546e7a;" onclick="boxEntry()">BOX</button>
+            <button id="stepToggle" style="background:#4527a0;" onclick="toggleStepMode()">STEP</button>
         </div>
 
         <div class="list" id="liveList"></div>
         <div class="total-section"><span>GT</span><span id="liveTotal">0</span></div>
-        <div class="row" style="margin-top:10px;">
-            <button class="reset-btn" onclick="resetAll()">RESET</button>
-            <button class="save-btn" onclick="saveDay()">SAVE</button>
+        
+        <div class="row">
+            <button style="background:#25D366;" onclick="share('live')">WHATSAPP</button>
+            <button style="background:#2e7d32;" onclick="saveDay()">SAVE</button>
         </div>
-        <button style="margin-top:10px; background:#607D8B; color:white;" onclick="openSaved()">SAVED HISTORY</button>
+        <button style="background:#455a64;" onclick="openHistory()">WIN CHECKER / HISTORY</button>
     </div>
 </div>
 
-<div class="screen hidden" id="savedPage">
+<div class="screen hidden" id="historyPage">
     <div class="card">
-        <h2>Saved History</h2>
-        <div class="row">
-            <button style="background:#673AB7; color:white;" onclick="renderSaved(true)">MERGE & SORT</button>
-            <button class="wa-btn" onclick="share('saved')">WA SHARE</button>
+        <h3>Saved History</h3>
+        <textarea id="resultPaste" placeholder="റിസൾട്ട് പേസ്റ്റ് ചെയ്യുക..." style="height:80px;"></textarea>
+        <button style="background:var(--secondary);" onclick="checkWinners()">CHECK WINNERS</button>
+        
+        <div id="winnerSection" class="hidden">
+            <div id="winnerList" class="list"></div>
+            <button style="background:#25D366;" onclick="shareWinners()">SHARE WINNERS</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+            <button style="background:#673AB7;" onclick="renderSaved(true)">MERGE & SORT</button>
+            <button style="background:var(--secondary);" onclick="shareMerged()">WA SHARE</button>
         </div>
         <div class="list" id="savedList"></div>
-        <div class="total-section" style="background:#555;"><span>GT</span><span id="savedTotal">0</span></div>
-        <button style="background:#757575; color:white; margin-top:10px;" onclick="backToMain()">BACK</button>
+        <div class="total-section"><span>GT</span><span id="savedTotal">0</span></div>
+        <button style="background:#555;" onclick="backToMain()">BACK</button>
     </div>
 </div>
 
@@ -92,151 +83,181 @@
     let customers = JSON.parse(localStorage.getItem("lottery_customers")) || [{name: "", temp: []}];
     let activeIndex = 0;
     let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
-    const beep = document.getElementById("beepSound");
+    let mergedData = [];
+    let isStepMode = false;
 
-    // വോയ്‌സ് സെറ്റിംഗ്സ് (വേഗത കൂട്ടിയത്)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition;
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
-        recognition.lang = 'ml-IN';
-        recognition.continuous = false;
-        recognition.interimResults = false; // കൂടുതൽ കൃത്യതയ്ക്ക് false തന്നെ നല്ലത്, പക്ഷെ പ്രോസസ്സ് വേഗത്തിലാക്കി
-
-        recognition.onstart = () => {
-            document.getElementById('voiceStatus').style.display = 'block';
-            document.getElementById('voiceBtn').style.background = '#f44336';
-            document.getElementById('voiceBtn').innerText = '🛑 കേൾക്കുന്നു..';
-        };
-
-        recognition.onend = () => {
-            document.getElementById('voiceStatus').style.display = 'none';
-            document.getElementById('voiceBtn').style.background = '#E91E63';
-            document.getElementById('voiceBtn').innerText = '🎤 വോയ്‌സ്';
-        };
-
-        recognition.onresult = (event) => {
-            const result = event.results[0][0].transcript;
-            processVoiceData(result);
-        };
-    }
-
-    function startVoice() {
-        if (!recognition) return alert("Chrome ഉപയോഗിക്കുക.");
-        recognition.start();
-    }
-
-    function processVoiceData(text) {
-        let nums = text.match(/\d+/g); 
-        if (nums && nums.length >= 2) {
-            let n = nums[0].padStart(3, '0');
-            let c = nums[1];
-            addManual(n, c);
+    // Focus switching
+    document.getElementById("num").addEventListener("input", function() { 
+        if(this.value.length === 3) {
+            if(isStepMode) document.getElementById("endNum").focus();
+            else document.getElementById("count").focus();
         }
+    });
+    document.getElementById("endNum").addEventListener("input", function() { if(this.value.length === 3) document.getElementById("gap").focus(); });
+    document.getElementById("count").addEventListener("keypress", (e) => { if(e.key === "Enter") addEntry(); });
+
+    function toggleStepMode() {
+        isStepMode = !isStepMode;
+        document.getElementById("endNum").classList.toggle("hidden");
+        document.getElementById("gap").classList.toggle("hidden");
+        let btn = document.getElementById("stepToggle");
+        btn.innerText = isStepMode ? "NORMAL" : "STEP";
+        btn.style.background = isStepMode ? "#d32f2f" : "#4527a0";
+        document.getElementById("addBtn").innerText = isStepMode ? "ADD RANGE" : "ADD";
     }
 
     function addManual(n, c) {
-        if (n.length > 3) n = n.slice(-3);
-        customers[activeIndex].temp.push({n: n, c: Number(c)});
-        beep.play();
+        let formattedNum = n.toString().padStart(3, '0');
+        customers[activeIndex].temp.push({n: formattedNum, c: Number(c), cust: customers[activeIndex].name || "No Name"});
         renderLive();
-    }
-
-    // നമ്പർ 3 അക്കമായാൽ കൗണ്ടിലേക്ക് പോകാൻ
-    document.getElementById("num").addEventListener("input", function() {
-        if (this.value.length === 3) {
-            document.getElementById("count").focus();
-        }
-    });
-
-    function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem("theme", document.body.classList.contains('dark-mode') ? "dark" : "light");
-    }
-    if(localStorage.getItem("theme") === "dark") document.body.classList.add('dark-mode');
-
-    function initTabs() {
-        let html = "";
-        customers.forEach((c, i) => {
-            html += `<div class="tab ${i === activeIndex ? 'active' : ''}" onclick="switchTab(${i})">${c.name || 'New Cust'}</div>`;
-        });
-        html += `<div class="add-tab" onclick="addNewCustomer()">+ Add</div>`;
-        document.getElementById("tabsList").innerHTML = html;
-        document.getElementById("customer").value = customers[activeIndex].name;
-        renderLive();
-    }
-
-    function switchTab(i) { activeIndex = i; initTabs(); }
-    function addNewCustomer() { customers.push({name: "", temp: []}); activeIndex = customers.length - 1; initTabs(); }
-    function updateTabName() { customers[activeIndex].name = document.getElementById("customer").value; initTabs(); saveAll(); }
-    function saveAll() { localStorage.setItem("lottery_customers", JSON.stringify(customers)); }
-
-    function renderLive() {
-        let html = "", total = 0;
-        let list = customers[activeIndex].temp;
-        [...list].reverse().forEach((item, i) => {
-            let idx = list.length - 1 - i;
-            html += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button class="del-btn" onclick="deleteEntry(${idx})">❌</button></div>`;
-            total += Number(item.c);
-        });
-        document.getElementById("liveList").innerHTML = html || "<p style='text-align:center;'>No Entry</p>";
-        document.getElementById("liveTotal").innerText = total;
-        saveAll();
     }
 
     function addEntry() {
-        let n = document.getElementById("num").value;
-        let c = document.getElementById("count").value;
-        if (n.length === 3 && c !== "") {
-            addManual(n, c);
-            document.getElementById("num").value = "";
-            document.getElementById("count").value = "";
-            document.getElementById("num").focus();
+        let start = document.getElementById("num").value;
+        let count = document.getElementById("count").value;
+
+        if(!start || !count) return;
+
+        if(isStepMode) {
+            let end = document.getElementById("endNum").value;
+            let gap = parseInt(document.getElementById("gap").value) || 1;
+            if(!end) return;
+            for(let i = parseInt(start); i <= parseInt(end); i += gap) {
+                addManual(i, count);
+            }
+            toggleStepMode(); // Reset to normal after range add
+        } else {
+            addManual(start, count);
         }
+
+        document.getElementById("num").value = "";
+        document.getElementById("endNum").value = "";
+        document.getElementById("count").value = "";
+        document.getElementById("num").focus();
     }
 
     function boxEntry() {
         let n = document.getElementById("num").value, c = document.getElementById("count").value;
-        if (n.length !== 3 || c === "") return;
+        if (n.length !== 3 || !c) return;
         let res = new Set();
-        let d = n.split('');
-        const p = (a, m = []) => { if (a.length === 0) res.add(m.join('')); else a.forEach((v, i) => { let cu = [...a]; cu.splice(i, 1); p(cu, [...m, v]); }); };
-        p(d); res.forEach(v => customers[activeIndex].temp.push({n: v, c: Number(c)}));
-        beep.play(); renderLive();
+        let p = (a, m = []) => { if (a.length === 0) res.add(m.join('')); else a.forEach((v, i) => { let cu = [...a]; cu.splice(i, 1); p(cu, [...m, v]); }); };
+        p(n.split(''));
+        res.forEach(v => addManual(v, c));
+        document.getElementById("num").value = ""; document.getElementById("count").value = "";
     }
 
-    function deleteEntry(idx) { if(confirm("ഡിലീറ്റ് ചെയ്യണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
-    function saveDay() { if (customers[activeIndex].temp.length > 0) { permanent = [...permanent, ...customers[activeIndex].temp]; localStorage.setItem("perm_list", JSON.stringify(permanent)); customers[activeIndex].temp = []; renderLive(); alert("Saved!"); } }
-    function resetAll() { if(confirm("Reset All Tabs?")) { customers = [{name: "", temp: []}]; activeIndex = 0; localStorage.removeItem("lottery_customers"); initTabs(); } }
-
-    function openSaved() { document.getElementById("mainPage").classList.add("hidden"); document.getElementById("savedPage").classList.remove("hidden"); renderSaved(false); }
-    function backToMain() { document.getElementById("savedPage").classList.add("hidden"); document.getElementById("mainPage").classList.remove("hidden"); }
-
-    function renderSaved(merge) {
-        let data = JSON.parse(localStorage.getItem("perm_list")) || [];
-        if (merge) {
-            let obj = {}; data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c));
-            data = Object.entries(obj).map(([n, c]) => ({n, c})).sort((a, b) => b.c - a.c);
-        }
-        let html = "", total = 0;
-        data.forEach(item => {
-            html += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span></div>`;
-            total += Number(item.c);
+    function renderLive() {
+        let h = "", t = 0;
+        customers[activeIndex].temp.slice().reverse().forEach((item, i) => {
+            h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:18px;">❌</button></div>`;
+            t += Number(item.c);
         });
-        document.getElementById("savedList").innerHTML = html || "No Data";
-        document.getElementById("savedTotal").innerText = total;
+        document.getElementById("liveList").innerHTML = h || "<p style='text-align:center;'>No Data</p>";
+        document.getElementById("liveTotal").innerText = t;
+        localStorage.setItem("lottery_customers", JSON.stringify(customers));
     }
 
-    function share(type) {
-        let name = document.getElementById("customer").value || "No Name";
-        let data = (type === 'live') ? customers[activeIndex].temp : (JSON.parse(localStorage.getItem("perm_list")) || []);
-        if (data.length === 0) return;
-        let txt = `📝 *${name.toUpperCase()}*\n━━━━━━━━━━━━━━━\n`;
+    function deleteEntry(idx) { 
+        if(confirm("ഈ നമ്പർ ഒഴിവാക്കണോ?")) {
+            customers[activeIndex].temp.splice(idx, 1); 
+            renderLive(); 
+        }
+    }
+
+    function resetTab() { if(confirm("ഈ ലിസ്റ്റ് മുഴുവനായി ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
+
+    function saveDay() { 
+        if(customers[activeIndex].temp.length > 0) { 
+            permanent = [...permanent, ...customers[activeIndex].temp]; 
+            localStorage.setItem("perm_list", JSON.stringify(permanent)); 
+            customers[activeIndex].temp = []; 
+            renderLive(); 
+            alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
+        } 
+    }
+
+    function checkWinners() {
+        let raw = document.getElementById("resultPaste").value;
+        let nums = raw.match(/\d{3}/g);
+        if(!nums) return;
+        let prizes = [5000, 500, 250, 100, 50];
+        let prizeMap = {};
+        nums.forEach((n, i) => { prizeMap[n] = (i < 5) ? prizes[i] : 20; });
+        let wins = permanent.filter(e => prizeMap[e.n]);
+        let h = "";
+        wins.forEach(w => { h += `<div class="item win-item"><span><b>${w.n}</b> (${w.c}) - ${w.cust}</span><span>₹${prizeMap[w.n] * w.c}</span></div>`; });
+        document.getElementById("winnerList").innerHTML = h || "വിജയികൾ ഇല്ല";
+        document.getElementById("winnerSection").classList.remove("hidden");
+    }
+
+    function shareWinners() {
+        let winContent = document.getElementById("winnerList").innerText;
+        let txt = "🏆 *WINNERS REPORT*\n━━━━━━━━━━━━━━━\n" + winContent;
+        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
+    }
+
+    function renderSaved(merge = false) {
+        let data = [...permanent];
+        if (merge) {
+            let obj = {}; 
+            data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c));
+            data = Object.entries(obj).map(([n, c]) => ({n, c, cust: "Merged"}));
+            data.sort((a, b) => b.c - a.c); // Higher count first
+            mergedData = data;
+        }
+        let h = "", t = 0;
+        data.forEach(i => {
+            h += `<div class="item"><span><b>${i.n}</b> - (${i.c})</span> <small>${i.cust}</small></div>`;
+            t += Number(i.c);
+        });
+        document.getElementById("savedList").innerHTML = h;
+        document.getElementById("savedTotal").innerText = t;
+    }
+
+    function shareMerged() {
+        if(mergedData.length === 0) { alert("ആദ്യം Merge & Sort ചെയ്യുക"); return; }
+        let min = prompt("Min Count:", "1");
+        if(min === null) return;
+        let filtered = mergedData.filter(i => i.c >= Number(min));
+        let txt = `📝 *MERGED DATA*\n━━━━━━━━━━━━━━━\n`;
         let total = 0;
-        data.forEach(item => { txt += `*${item.n}* = ${item.c}\n`; total += Number(item.c); });
+        for (let i = 0; i < filtered.length; i += 2) {
+            let i1 = filtered[i], i2 = filtered[i+1];
+            txt += `*${i1.n}*=${i1.c}`; total += i1.c;
+            if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += i2.c; } else txt += `\n`;
+        }
         txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
     }
+
+    function share(type) {
+        let name = document.getElementById("customer").value || "User";
+        let data = customers[activeIndex].temp;
+        if(data.length === 0) return;
+        let txt = `📝 *${name.toUpperCase()}*\n━━━━━━━━━━━━━━━\n`;
+        let total = 0;
+        for (let i = 0; i < data.length; i += 2) {
+            let i1 = data[i], i2 = data[i+1];
+            txt += `*${i1.n}*=${i1.c}`; total += Number(i1.c);
+            if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += Number(i2.c); } else txt += `\n`;
+        }
+        txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
+        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
+    }
+
+    function openHistory() { document.getElementById("mainPage").classList.add("hidden"); document.getElementById("historyPage").classList.remove("hidden"); renderSaved(); }
+    function backToMain() { document.getElementById("historyPage").classList.add("hidden"); document.getElementById("mainPage").classList.remove("hidden"); }
+    function initTabs() {
+        let h = "";
+        customers.forEach((c, i) => h += `<div class="tab ${i === activeIndex ? 'active' : ''}" onclick="switchTab(${i})">${c.name || 'New'}</div>`);
+        h += `<div class="tab" onclick="addNewCustomer()">+ Add</div>`;
+        document.getElementById("tabsList").innerHTML = h;
+        document.getElementById("customer").value = customers[activeIndex].name;
+        renderLive();
+    }
+    function switchTab(i) { activeIndex = i; initTabs(); }
+    function addNewCustomer() { customers.push({name: "", temp: []}); activeIndex = customers.length - 1; initTabs(); }
+    function updateTabName() { customers[activeIndex].name = document.getElementById("customer").value; localStorage.setItem("lottery_customers", JSON.stringify(customers)); }
     initTabs();
 </script>
 </body>
