@@ -3,16 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lottery Pro Max - Voice Edition</title>
+<title>Lottery Pro Max - Speed Voice</title>
 <style>
-    :root {
-        --bg: #f4f7f6; --card-bg: #ffffff; --text: #333;
-        --primary: #2196F3; --secondary: #ffc107;
-        --success: #4CAF50; --danger: #f44336; --border: #ddd;
-    }
-    body.dark-mode {
-        --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --border: #333;
-    }
+    :root { --bg: #f4f7f6; --card-bg: #ffffff; --text: #333; --primary: #2196F3; --secondary: #ffc107; --success: #4CAF50; --danger: #f44336; --border: #ddd; }
+    body.dark-mode { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --border: #333; }
     body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; }
     .screen { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
     .card { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
@@ -59,11 +53,6 @@
         </div>
         <div id="voiceStatus" class="status-voice">ശ്രദ്ധിക്കുന്നു... (സംസാരിക്കുക)</div>
 
-        <div class="row">
-            <button class="reset-btn" onclick="resetAll()">RESET</button>
-            <button class="save-btn" onclick="saveDay()">SAVE</button>
-        </div>
-        
         <div id="normalInput">
             <div class="row">
                 <input id="num" placeholder="Number" maxlength="3" type="tel">
@@ -78,7 +67,11 @@
 
         <div class="list" id="liveList"></div>
         <div class="total-section"><span>GT</span><span id="liveTotal">0</span></div>
-        <button style="margin-top:15px; background:#607D8B; color:white;" onclick="openSaved()">SAVED HISTORY</button>
+        <div class="row" style="margin-top:10px;">
+            <button class="reset-btn" onclick="resetAll()">RESET</button>
+            <button class="save-btn" onclick="saveDay()">SAVE</button>
+        </div>
+        <button style="margin-top:10px; background:#607D8B; color:white;" onclick="openSaved()">SAVED HISTORY</button>
     </div>
 </div>
 
@@ -101,19 +94,19 @@
     let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
     const beep = document.getElementById("beepSound");
 
-    // Voice Recognition Setup
+    // വോയ്‌സ് സെറ്റിംഗ്സ് (വേഗത കൂട്ടിയത്)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.lang = 'ml-IN';
         recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.interimResults = false; // കൂടുതൽ കൃത്യതയ്ക്ക് false തന്നെ നല്ലത്, പക്ഷെ പ്രോസസ്സ് വേഗത്തിലാക്കി
 
         recognition.onstart = () => {
             document.getElementById('voiceStatus').style.display = 'block';
             document.getElementById('voiceBtn').style.background = '#f44336';
-            document.getElementById('voiceBtn').innerText = '🛑 റെക്കോർഡിംഗ്..';
+            document.getElementById('voiceBtn').innerText = '🛑 കേൾക്കുന്നു..';
         };
 
         recognition.onend = () => {
@@ -126,32 +119,19 @@
             const result = event.results[0][0].transcript;
             processVoiceData(result);
         };
-
-        recognition.onerror = (event) => {
-            if(event.error === 'not-allowed') {
-                alert("മൈക്രോഫോൺ പെർമിഷൻ ബ്ലോക്ക് ചെയ്തിരിക്കുകയാണ്. ബ്രൗസർ സെറ്റിംഗ്സിൽ ഇത് മാറ്റുക.");
-            }
-        };
     }
 
     function startVoice() {
-        if (!recognition) return alert("ദയവായി Chrome ബ്രൗസർ ഉപയോഗിക്കുക.");
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-            alert("വോയ്‌സ് ഫീച്ചർ സുരക്ഷിതമായ (HTTPS) വെബ്‌സൈറ്റുകളിൽ മാത്രമേ പ്രവർത്തിക്കൂ. ഇത് GitHub-ലേക്ക് മാറ്റിയാൽ ശരിയാകും.");
-            return;
-        }
+        if (!recognition) return alert("Chrome ഉപയോഗിക്കുക.");
         recognition.start();
     }
 
     function processVoiceData(text) {
-        // മലയാളം സംസാരത്തിൽ നിന്ന് നമ്പറുകൾ കണ്ടെത്തുന്നു
         let nums = text.match(/\d+/g); 
         if (nums && nums.length >= 2) {
             let n = nums[0].padStart(3, '0');
             let c = nums[1];
             addManual(n, c);
-        } else {
-            alert("മനസ്സിലായില്ല: '" + text + "'. നമ്പറും കൗണ്ടും പറയുക.");
         }
     }
 
@@ -161,6 +141,13 @@
         beep.play();
         renderLive();
     }
+
+    // നമ്പർ 3 അക്കമായാൽ കൗണ്ടിലേക്ക് പോകാൻ
+    document.getElementById("num").addEventListener("input", function() {
+        if (this.value.length === 3) {
+            document.getElementById("count").focus();
+        }
+    });
 
     function toggleTheme() {
         document.body.classList.toggle('dark-mode');
@@ -219,7 +206,7 @@
     }
 
     function deleteEntry(idx) { if(confirm("ഡിലീറ്റ് ചെയ്യണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
-    function saveDay() { if (customers[activeIndex].temp.length > 0) { permanent = [...permanent, ...customers[activeIndex].temp]; localStorage.setItem("perm_list", JSON.stringify(permanent)); customers[activeIndex].temp = []; renderLive(); } }
+    function saveDay() { if (customers[activeIndex].temp.length > 0) { permanent = [...permanent, ...customers[activeIndex].temp]; localStorage.setItem("perm_list", JSON.stringify(permanent)); customers[activeIndex].temp = []; renderLive(); alert("Saved!"); } }
     function resetAll() { if(confirm("Reset All Tabs?")) { customers = [{name: "", temp: []}]; activeIndex = 0; localStorage.removeItem("lottery_customers"); initTabs(); } }
 
     function openSaved() { document.getElementById("mainPage").classList.add("hidden"); document.getElementById("savedPage").classList.remove("hidden"); renderSaved(false); }
@@ -244,33 +231,12 @@
         let name = document.getElementById("customer").value || "No Name";
         let data = (type === 'live') ? customers[activeIndex].temp : (JSON.parse(localStorage.getItem("perm_list")) || []);
         if (data.length === 0) return;
-
-        if (type === 'saved') {
-            let obj = {}; data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c));
-            data = Object.entries(obj).map(([n, c]) => ({n, c})).sort((a, b) => b.c - a.c);
-            let min = prompt("മിനിമം കൗണ്ട്?", "0");
-            if (min === null) return;
-            data = data.filter(i => i.c >= Number(min));
-        }
-
         let txt = `📝 *${name.toUpperCase()}*\n━━━━━━━━━━━━━━━\n`;
         let total = 0;
-        for (let i = 0; i < data.length; i += 2) {
-            let f = data[i], s = data[i+1];
-            txt += `*${f.n}*=${f.c}`; total += Number(f.c);
-            if (s) { txt += `  |  *${s.n}*=${s.c}`; total += Number(s.c); }
-            txt += `\n`;
-        }
+        data.forEach(item => { txt += `*${item.n}* = ${item.c}\n`; total += Number(item.c); });
         txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
-        if (type === 'live') saveDay();
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
-    }// നമ്പർ ബോക്സിൽ 3 അക്കം ആയാൽ ഉടൻ കൗണ്ട് ബോക്സിലേക്ക് മാറാൻ
-document.getElementById("num").addEventListener("input", function() {
-    if (this.value.length === 3) {
-        document.getElementById("count").focus();
     }
-});
-
     initTabs();
 </script>
 </body>
