@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lottery Pro Max - Advanced Step</title>
+<title>Lottery Pro Max - Updated</title>
 <style>
     :root { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --primary: #7b1fa2; --secondary: #00c853; --danger: #d32f2f; --border: #333; }
     body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 10px; }
-    .card { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 15px; padding: 20px; box-sizing: border-box; }
+    .card { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 15px; padding: 15px; box-sizing: border-box; }
     input, button, textarea { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: #2c2c2c; color: white; }
     .row { display: flex; gap: 8px; align-items: center; }
     .row > * { flex: 1; }
@@ -20,13 +20,14 @@
     .total-section { display: flex; justify-content: space-between; padding: 12px; background: #333; border-radius: 8px; margin-top: 10px; font-weight: bold; }
     .win-item { background: #1b5e20; color: #fff; margin-bottom: 2px; }
     .hidden { display: none !important; }
+    .smart-box { background: #263238; padding: 10px; border-radius: 8px; border: 1px dashed var(--secondary); margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <div class="screen" id="mainPage">
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0; color:var(--primary);">Lottery Smart Pro</h3>
             <button onclick="resetTab()" style="width:auto; font-size:11px; background:var(--danger); padding:5px 10px;">RESET</button>
         </div>
@@ -34,6 +35,11 @@
         <div class="tabs" id="tabsList"></div>
         <input id="customer" placeholder="കസ്റ്റമർ പേര്" oninput="updateTabName()">
         
+        <div class="smart-box">
+            <textarea id="smartPaste" placeholder="ലിസ്റ്റ് ഇവിടെ പേസ്റ്റ് ചെയ്യുക..." style="height:50px; font-size:13px; margin:0;"></textarea>
+            <button style="background:var(--secondary); padding:8px; margin-top:5px; font-size:12px;" onclick="processSmartPaste()">SMART ADD</button>
+        </div>
+
         <div class="row">
             <input id="num" placeholder="No" maxlength="3" type="tel">
             <input id="endNum" class="hidden" placeholder="End" maxlength="3" type="tel">
@@ -73,9 +79,14 @@
             <button style="background:#673AB7;" onclick="renderSaved(true)">MERGE & SORT</button>
             <button style="background:var(--secondary);" onclick="shareMerged()">WA SHARE</button>
         </div>
+        
         <div class="list" id="savedList"></div>
         <div class="total-section"><span>GT</span><span id="savedTotal">0</span></div>
-        <button style="background:#555;" onclick="backToMain()">BACK</button>
+        
+        <div class="row">
+            <button style="background:#555;" onclick="backToMain()">BACK</button>
+            <button style="background:var(--danger);" onclick="clearAllHistory()">CLEAR ALL</button>
+        </div>
     </div>
 </div>
 
@@ -93,7 +104,6 @@
             else document.getElementById("count").focus();
         }
     });
-    document.getElementById("endNum").addEventListener("input", function() { if(this.value.length === 3) document.getElementById("gap").focus(); });
     document.getElementById("count").addEventListener("keypress", (e) => { if(e.key === "Enter") addEntry(); });
 
     function toggleStepMode() {
@@ -106,6 +116,15 @@
         document.getElementById("addBtn").innerText = isStepMode ? "ADD RANGE" : "ADD";
     }
 
+    function processSmartPaste() {
+        let text = document.getElementById("smartPaste").value;
+        if(!text) return;
+        let regex = /(\d{3})[^\d]+(\d+)/g;
+        let match;
+        while ((match = regex.exec(text)) !== null) { addManual(match[1], match[2]); }
+        document.getElementById("smartPaste").value = "";
+    }
+
     function addManual(n, c) {
         let formattedNum = n.toString().padStart(3, '0');
         customers[activeIndex].temp.push({n: formattedNum, c: Number(c), cust: customers[activeIndex].name || "No Name"});
@@ -115,24 +134,15 @@
     function addEntry() {
         let start = document.getElementById("num").value;
         let count = document.getElementById("count").value;
-
         if(!start || !count) return;
-
         if(isStepMode) {
             let end = document.getElementById("endNum").value;
             let gap = parseInt(document.getElementById("gap").value) || 1;
             if(!end) return;
-            for(let i = parseInt(start); i <= parseInt(end); i += gap) {
-                addManual(i, count);
-            }
-            toggleStepMode(); // Reset to normal after range add
-        } else {
-            addManual(start, count);
-        }
-
-        document.getElementById("num").value = "";
-        document.getElementById("endNum").value = "";
-        document.getElementById("count").value = "";
+            for(let i = parseInt(start); i <= parseInt(end); i += gap) { addManual(i, count); }
+            toggleStepMode();
+        } else { addManual(start, count); }
+        document.getElementById("num").value = ""; document.getElementById("endNum").value = ""; document.getElementById("count").value = "";
         document.getElementById("num").focus();
     }
 
@@ -149,7 +159,7 @@
     function renderLive() {
         let h = "", t = 0;
         customers[activeIndex].temp.slice().reverse().forEach((item, i) => {
-            h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:18px;">❌</button></div>`;
+            h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none;">❌</button></div>`;
             t += Number(item.c);
         });
         document.getElementById("liveList").innerHTML = h || "<p style='text-align:center;'>No Data</p>";
@@ -158,21 +168,24 @@
     }
 
     function deleteEntry(idx) { 
-        if(confirm("ഈ നമ്പർ ഒഴിവാക്കണോ?")) {
-            customers[activeIndex].temp.splice(idx, 1); 
-            renderLive(); 
-        }
+        if(confirm("ഈ നമ്പർ ഒഴിവാക്കണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); }
     }
 
-    function resetTab() { if(confirm("ഈ ലിസ്റ്റ് മുഴുവനായി ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
+    function deleteHistoryItem(idx) {
+        if(confirm("ഈ ഹിസ്റ്ററി ഒഴിവാക്കണോ?")) { permanent.splice(idx, 1); localStorage.setItem("perm_list", JSON.stringify(permanent)); renderSaved(); }
+    }
+
+    function clearAllHistory() {
+        if(confirm("മൊത്തം ഹിസ്റ്ററിയും ക്ലിയർ ചെയ്യണോ?")) { permanent = []; localStorage.setItem("perm_list", JSON.stringify([])); renderSaved(); }
+    }
+
+    function resetTab() { if(confirm("ഈ ടാബ് ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
 
     function saveDay() { 
         if(customers[activeIndex].temp.length > 0) { 
             permanent = [...permanent, ...customers[activeIndex].temp]; 
             localStorage.setItem("perm_list", JSON.stringify(permanent)); 
-            customers[activeIndex].temp = []; 
-            renderLive(); 
-            alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
+            customers[activeIndex].temp = []; renderLive(); alert("Saved!"); 
         } 
     }
 
@@ -191,23 +204,21 @@
     }
 
     function shareWinners() {
-        let winContent = document.getElementById("winnerList").innerText;
-        let txt = "🏆 *WINNERS REPORT*\n━━━━━━━━━━━━━━━\n" + winContent;
+        let txt = "🏆 *WINNERS REPORT*\n━━━━━━━━━━━━━━━\n" + document.getElementById("winnerList").innerText;
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
     }
 
     function renderSaved(merge = false) {
         let data = [...permanent];
         if (merge) {
-            let obj = {}; 
-            data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c));
+            let obj = {}; data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c));
             data = Object.entries(obj).map(([n, c]) => ({n, c, cust: "Merged"}));
-            data.sort((a, b) => b.c - a.c); // Higher count first
+            data.sort((a, b) => b.c - a.c);
             mergedData = data;
         }
         let h = "", t = 0;
-        data.forEach(i => {
-            h += `<div class="item"><span><b>${i.n}</b> - (${i.c})</span> <small>${i.cust}</small></div>`;
+        data.slice().reverse().forEach((i, idx) => {
+            h += `<div class="item"><span><b>${i.n}</b> - (${i.c}) <small>${i.cust}</small></span><button onclick="deleteHistoryItem(${data.length-1-idx})" style="color:gray; background:none; border:none; font-size:12px;">❌</button></div>`;
             t += Number(i.c);
         });
         document.getElementById("savedList").innerHTML = h;
@@ -216,10 +227,9 @@
 
     function shareMerged() {
         if(mergedData.length === 0) { alert("ആദ്യം Merge & Sort ചെയ്യുക"); return; }
-        let min = prompt("Min Count:", "1");
-        if(min === null) return;
+        let min = prompt("Min Count:", "1"); if(min === null) return;
         let filtered = mergedData.filter(i => i.c >= Number(min));
-        let txt = `📝 *MERGED DATA*\n━━━━━━━━━━━━━━━\n`;
+        let txt = `📝 *MERGED HISTORY*\n━━━━━━━━━━━━━━━\n`;
         let total = 0;
         for (let i = 0; i < filtered.length; i += 2) {
             let i1 = filtered[i], i2 = filtered[i+1];
