@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lottery Pro Max - Manual Save</title>
+<title>Lottery Pro Max - Final</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <style>
     :root { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --primary: #7b1fa2; --secondary: #00c853; --danger: #d32f2f; --border: #333; }
     body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 10px; }
@@ -11,32 +15,44 @@
     input, button, textarea { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: #2c2c2c; color: white; }
     .row { display: flex; gap: 8px; align-items: center; }
     .row > * { flex: 1; }
-    button { font-weight: bold; cursor: pointer; border: none; text-transform: uppercase; }
-    .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; }
+    button { font-weight: bold; cursor: pointer; border: none; text-transform: uppercase; transition: 0.3s; }
+    button:active { transform: scale(0.95); }
+    .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px; }
     .tab { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .tab.active { background: var(--primary); color: white; }
     .list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #181818; }
     .item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); }
-    .total-section { display: flex; justify-content: space-between; padding: 12px; background: #333; border-radius: 8px; margin-top: 10px; font-weight: bold; }
+    .total-section { display: flex; justify-content: space-between; padding: 12px; background: #333; border-radius: 8px; margin-top: 10px; font-weight: bold; border: 1px solid var(--primary); }
     .win-item { background: #1b5e20; color: #fff; margin-bottom: 2px; }
     .hidden { display: none !important; }
     .smart-box { background: #263238; padding: 10px; border-radius: 8px; border: 1px dashed var(--secondary); margin-bottom: 10px; }
+    #loginOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#121212; z-index:9999; display:flex; justify-content:center; align-items:center; }
 </style>
 </head>
 <body>
 
-<div class="screen" id="mainPage">
+<div id="loginOverlay">
+    <div class="card" style="max-width:320px; text-align:center; border: 1px solid var(--primary);">
+        <h2 style="color:var(--primary); margin-top:0;">Lottery Pro</h2>
+        <p style="font-size:13px; color:gray;">രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ നൽകി ലോഗിൻ ചെയ്യുക</p>
+        <input id="loginPhone" type="tel" placeholder="Mobile Number" style="text-align:center; letter-spacing: 2px;">
+        <button id="loginBtn" style="background:var(--primary); color:white;" onclick="checkLogin()">UNLOCK APP</button>
+        <p id="statusMsg" style="font-size:12px; margin-top:10px; font-weight:bold;"></p>
+    </div>
+</div>
+
+<div class="screen hidden" id="mainPage">
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0; color:var(--primary);">Lottery Smart Pro</h3>
-            <button onclick="resetTab()" style="width:auto; font-size:11px; background:var(--danger); padding:5px 10px;">RESET</button>
+            <button onclick="logout()" style="width:auto; font-size:10px; background:#444; padding:5px 10px;">LOGOUT</button>
         </div>
         
         <div class="tabs" id="tabsList"></div>
         <input id="customer" placeholder="കസ്റ്റമർ പേര്" oninput="updateTabName()">
         
         <div class="smart-box">
-            <textarea id="smartPaste" placeholder="ലിസ്റ്റ് ഇവിടെ പേസ്റ്റ് ചെയ്യുക..." style="height:50px; font-size:13px; margin:0;"></textarea>
+            <textarea id="smartPaste" placeholder="ലിസ്റ്റ് ഇവിടെ പേസ്റ്റ് ചെയ്യുക (No Count)..." style="height:50px; font-size:13px; margin:0;"></textarea>
             <button style="background:var(--secondary); padding:8px; margin-top:5px; font-size:12px;" onclick="processSmartPaste()">SMART ADD</button>
         </div>
 
@@ -54,13 +70,14 @@
         </div>
 
         <div class="list" id="liveList"></div>
-        <div class="total-section"><span>GT</span><span id="liveTotal">0</span></div>
+        <div class="total-section"><span>TOTAL COUNT</span><span id="liveTotal">0</span></div>
         
         <div class="row">
             <button style="background:#25D366;" onclick="share('live')">WHATSAPP</button>
-            <button style="background:#2e7d32;" onclick="saveDay()">SAVE</button>
+            <button style="background:#2e7d32;" onclick="saveDay()">SAVE TO HISTORY</button>
         </div>
         <button style="background:#455a64;" onclick="openHistory()">WIN CHECKER / HISTORY</button>
+        <button onclick="resetTab()" style="background:var(--danger); font-size:12px; margin-top:5px;">CLEAR CURRENT TAB</button>
     </div>
 </div>
 
@@ -77,26 +94,89 @@
 
         <div class="row" style="margin-top:10px;">
             <button style="background:#673AB7;" onclick="renderSaved(true)">MERGE & SORT</button>
-            <button style="background:var(--secondary);" onclick="shareMerged()">WA SHARE</button>
+            <button style="background:var(--secondary);" onclick="shareMerged()">WA SHARE MERGED</button>
         </div>
-        
         <div class="list" id="savedList"></div>
         <div class="total-section"><span>GT</span><span id="savedTotal">0</span></div>
-        
         <div class="row">
             <button style="background:#555;" onclick="backToMain()">BACK</button>
-            <button style="background:var(--danger);" onclick="clearAllHistory()">CLEAR ALL</button>
+            <button style="background:var(--danger);" onclick="clearAllHistory()">CLEAR ALL HISTORY</button>
         </div>
     </div>
 </div>
 
 <script>
+    // --- നിങ്ങളുടെ FIREBASE URL ഇവിടെ ചേർത്തു ---
+    const firebaseConfig = {
+        databaseURL: "https://surajlott-4a0b6-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // --- ലോഗിൻ സിസ്റ്റം ---
+    function checkLogin() {
+        const phone = document.getElementById("loginPhone").value.trim();
+        const msg = document.getElementById("statusMsg");
+        if(!phone) { alert("മൊബൈൽ നമ്പർ നൽകുക"); return; }
+        
+        msg.style.color = "orange";
+        msg.innerText = "Checking Access...";
+        
+        db.ref('users/' + phone).once('value').then((snapshot) => {
+            const val = snapshot.val();
+            if(val && val.status === 'active') {
+                localStorage.setItem("lottery_user", phone);
+                showMain();
+                startRealtimeCheck(phone);
+            } else {
+                msg.style.color = "red";
+                msg.innerText = val ? "Access Blocked by Admin!" : "Number Not Registered!";
+            }
+        }).catch(err => {
+            msg.innerText = "Error: Check Internet/Database Rules";
+        });
+    }
+
+    function showMain() {
+        document.getElementById("loginOverlay").classList.add("hidden");
+        document.getElementById("mainPage").classList.remove("hidden");
+        initTabs();
+    }
+
+    function logout() { localStorage.clear(); location.reload(); }
+
+    function startRealtimeCheck(phone) {
+        db.ref('users/' + phone + '/status').on('value', (snap) => {
+            if(snap.val() !== 'active') {
+                alert("നിങ്ങളുടെ ആക്സസ് അഡ്മിൻ റദ്ദാക്കിയിരിക്കുന്നു.");
+                localStorage.clear();
+                location.reload();
+            }
+        });
+    }
+
+    window.onload = function() {
+        const saved = localStorage.getItem("lottery_user");
+        if(saved) {
+            db.ref('users/' + saved + '/status').once('value').then((snap) => {
+                if(snap.val() === 'active') {
+                    showMain();
+                    startRealtimeCheck(saved);
+                } else {
+                    localStorage.clear();
+                }
+            });
+        }
+    }
+
+    // --- ആപ്പ് ഫംഗ്ഷനുകൾ ---
     let customers = JSON.parse(localStorage.getItem("lottery_customers")) || [{name: "", temp: []}];
     let activeIndex = 0;
     let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
     let mergedData = [];
     let isStepMode = false;
 
+    // Auto Focus Logic
     document.getElementById("num").addEventListener("input", function() { 
         if(this.value.length === 3) {
             if(isStepMode) document.getElementById("endNum").focus();
@@ -158,38 +238,24 @@
     function renderLive() {
         let h = "", t = 0;
         customers[activeIndex].temp.slice().reverse().forEach((item, i) => {
-            h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none;">❌</button></div>`;
+            h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:18px;">❌</button></div>`;
             t += Number(item.c);
         });
-        document.getElementById("liveList").innerHTML = h || "<p style='text-align:center;'>No Data</p>";
+        document.getElementById("liveList").innerHTML = h || "<p style='text-align:center; padding:20px; color:gray;'>ലിസ്റ്റ് കാലിയാണ്</p>";
         document.getElementById("liveTotal").innerText = t;
         localStorage.setItem("lottery_customers", JSON.stringify(customers));
     }
 
-    function deleteEntry(idx) { 
-        if(confirm("ഈ നമ്പർ ഒഴിവാക്കണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); }
-    }
-
-    function deleteHistoryItem(idx) {
-        if(confirm("ഈ ഹിസ്റ്ററി ഒഴിവാക്കണോ?")) { permanent.splice(idx, 1); localStorage.setItem("perm_list", JSON.stringify(permanent)); renderSaved(); }
-    }
-
-    function clearAllHistory() {
-        if(confirm("മൊത്തം ഹിസ്റ്ററിയും ക്ലിയർ ചെയ്യണോ?")) { permanent = []; localStorage.setItem("perm_list", JSON.stringify([])); renderSaved(); }
-    }
-
+    function deleteEntry(idx) { if(confirm("ഈ എൻട്രി ഡിലീറ്റ് ചെയ്യണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
+    function deleteHistoryItem(idx) { if(confirm("ഡിലീറ്റ് ചെയ്യണോ?")) { permanent.splice(idx, 1); localStorage.setItem("perm_list", JSON.stringify(permanent)); renderSaved(); } }
+    function clearAllHistory() { if(confirm("മൊത്തം ഹിസ്റ്ററിയും ക്ലിയർ ചെയ്യണോ?")) { permanent = []; localStorage.setItem("perm_list", JSON.stringify([])); renderSaved(); } }
     function resetTab() { if(confirm("ഈ ടാബ് ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
 
-    // മർമ്മപ്രധാനമായ മാറ്റം: ഇത് മാത്രമാണ് ഹിസ്റ്ററിയിലേക്ക് ഡാറ്റ സേവ് ചെയ്യുന്നത്
     function saveDay() { 
         if(customers[activeIndex].temp.length > 0) { 
             permanent = [...permanent, ...customers[activeIndex].temp]; 
             localStorage.setItem("perm_list", JSON.stringify(permanent)); 
-            // സേവ് ചെയ്ത ശേഷം ലിസ്റ്റ് ക്ലിയർ ചെയ്യണോ എന്ന് നിങ്ങൾക്ക് തീരുമാനിക്കാം. 
-            // താഴെ കൊടുത്ത വരി മാറ്റിയാൽ സേവ് ചെയ്താലും ലിസ്റ്റിൽ ബാക്കി നിൽക്കും.
-            customers[activeIndex].temp = []; 
-            renderLive(); 
-            alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
+            customers[activeIndex].temp = []; renderLive(); alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
         } 
     }
 
@@ -203,12 +269,12 @@
         let wins = permanent.filter(e => prizeMap[e.n]);
         let h = "";
         wins.forEach(w => { h += `<div class="item win-item"><span><b>${w.n}</b> (${w.c}) - ${w.cust}</span><span>₹${prizeMap[w.n] * w.c}</span></div>`; });
-        document.getElementById("winnerList").innerHTML = h || "വിജയികൾ ഇല്ല";
+        document.getElementById("winnerList").innerHTML = h || "<p style='padding:10px;'>വിജയികൾ ഇല്ല</p>";
         document.getElementById("winnerSection").classList.remove("hidden");
     }
 
     function shareWinners() {
-        let txt = "🏆 *WINNERS REPORT*\n━━━━━━━━━━━━━━━\n" + document.getElementById("winnerList").innerText;
+        let txt = "🏆 *LOTTERY WINNERS*\n━━━━━━━━━━━━━━━\n" + document.getElementById("winnerList").innerText;
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
     }
 
@@ -233,7 +299,7 @@
         if(mergedData.length === 0) { alert("ആദ്യം Merge & Sort ചെയ്യുക"); return; }
         let min = prompt("Min Count:", "1"); if(min === null) return;
         let filtered = mergedData.filter(i => i.c >= Number(min));
-        let txt = `📝 *MERGED HISTORY*\n━━━━━━━━━━━━━━━\n`;
+        let txt = `📝 *MERGED LIST*\n━━━━━━━━━━━━━━━\n`;
         let total = 0;
         for (let i = 0; i < filtered.length; i += 2) {
             let i1 = filtered[i], i2 = filtered[i+1];
@@ -244,7 +310,6 @@
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
     }
 
-    // ഷെയർ ഫംഗ്ഷനിൽ മാറ്റം വരുത്തി: ഡാറ്റ ഹിസ്റ്ററിയിലേക്ക് സേവ് ചെയ്യില്ല
     function share(type) {
         let name = document.getElementById("customer").value || "User";
         let data = customers[activeIndex].temp;
@@ -262,18 +327,20 @@
 
     function openHistory() { document.getElementById("mainPage").classList.add("hidden"); document.getElementById("historyPage").classList.remove("hidden"); renderSaved(); }
     function backToMain() { document.getElementById("historyPage").classList.add("hidden"); document.getElementById("mainPage").classList.remove("hidden"); }
+    
     function initTabs() {
         let h = "";
-        customers.forEach((c, i) => h += `<div class="tab ${i === activeIndex ? 'active' : ''}" onclick="switchTab(${i})">${c.name || 'New'}</div>`);
-        h += `<div class="tab" onclick="addNewCustomer()">+ Add</div>`;
+        customers.forEach((c, i) => h += `<div class="tab ${i === activeIndex ? 'active' : ''}" onclick="switchTab(${i})">${c.name || 'New Customer'}</div>`);
+        h += `<div class="tab" onclick="addNewCustomer()" style="background:var(--secondary);">+ ADD</div>`;
         document.getElementById("tabsList").innerHTML = h;
         document.getElementById("customer").value = customers[activeIndex].name;
         renderLive();
     }
+    
     function switchTab(i) { activeIndex = i; initTabs(); }
     function addNewCustomer() { customers.push({name: "", temp: []}); activeIndex = customers.length - 1; initTabs(); }
-    function updateTabName() { customers[activeIndex].name = document.getElementById("customer").value; localStorage.setItem("lottery_customers", JSON.stringify(customers)); }
-    initTabs();
+    function updateTabName() { customers[activeIndex].name = document.getElementById("customer").value; localStorage.setItem("lottery_customers", JSON.stringify(customers)); initTabs(); }
+
 </script>
 </body>
 </html>
