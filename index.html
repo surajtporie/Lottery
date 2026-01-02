@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lottery Pro Max - Updated</title>
+<title>Lottery Pro Max - Manual Save</title>
 <style>
     :root { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --primary: #7b1fa2; --secondary: #00c853; --danger: #d32f2f; --border: #333; }
     body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 10px; }
@@ -97,7 +97,6 @@
     let mergedData = [];
     let isStepMode = false;
 
-    // Focus switching
     document.getElementById("num").addEventListener("input", function() { 
         if(this.value.length === 3) {
             if(isStepMode) document.getElementById("endNum").focus();
@@ -181,11 +180,16 @@
 
     function resetTab() { if(confirm("ഈ ടാബ് ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
 
+    // മർമ്മപ്രധാനമായ മാറ്റം: ഇത് മാത്രമാണ് ഹിസ്റ്ററിയിലേക്ക് ഡാറ്റ സേവ് ചെയ്യുന്നത്
     function saveDay() { 
         if(customers[activeIndex].temp.length > 0) { 
             permanent = [...permanent, ...customers[activeIndex].temp]; 
             localStorage.setItem("perm_list", JSON.stringify(permanent)); 
-            customers[activeIndex].temp = []; renderLive(); alert("Saved!"); 
+            // സേവ് ചെയ്ത ശേഷം ലിസ്റ്റ് ക്ലിയർ ചെയ്യണോ എന്ന് നിങ്ങൾക്ക് തീരുമാനിക്കാം. 
+            // താഴെ കൊടുത്ത വരി മാറ്റിയാൽ സേവ് ചെയ്താലും ലിസ്റ്റിൽ ബാക്കി നിൽക്കും.
+            customers[activeIndex].temp = []; 
+            renderLive(); 
+            alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
         } 
     }
 
@@ -240,6 +244,7 @@
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
     }
 
+    // ഷെയർ ഫംഗ്ഷനിൽ മാറ്റം വരുത്തി: ഡാറ്റ ഹിസ്റ്ററിയിലേക്ക് സേവ് ചെയ്യില്ല
     function share(type) {
         let name = document.getElementById("customer").value || "User";
         let data = customers[activeIndex].temp;
