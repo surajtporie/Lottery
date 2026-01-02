@@ -23,7 +23,6 @@
     .list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #181818; }
     .item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); }
     .total-section { display: flex; justify-content: space-between; padding: 12px; background: #333; border-radius: 8px; margin-top: 10px; font-weight: bold; border: 1px solid var(--primary); }
-    .win-item { background: #1b5e20; color: #fff; margin-bottom: 2px; }
     .hidden { display: none !important; }
     .smart-box { background: #263238; padding: 10px; border-radius: 8px; border: 1px dashed var(--secondary); margin-bottom: 10px; }
     #loginOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#121212; z-index:9999; display:flex; justify-content:center; align-items:center; }
@@ -34,9 +33,9 @@
 <div id="loginOverlay">
     <div class="card" style="max-width:320px; text-align:center; border: 1px solid var(--primary);">
         <h2 style="color:var(--primary); margin-top:0;">Lottery Pro</h2>
-        <p style="font-size:13px; color:gray;">രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ നൽകി ലോഗിൻ ചെയ്യുക</p>
-        <input id="loginPhone" type="tel" placeholder="Mobile Number" style="text-align:center; letter-spacing: 2px;">
-        <button id="loginBtn" style="background:var(--primary); color:white;" onclick="checkLogin()">UNLOCK APP</button>
+        <p style="font-size:13px; color:gray;">മൊബൈൽ നമ്പർ നൽകി ലോഗിൻ ചെയ്യുക</p>
+        <input id="loginPhone" type="tel" placeholder="Mobile Number" style="text-align:center;">
+        <button style="background:var(--primary); color:white;" onclick="checkLogin()">UNLOCK APP</button>
         <p id="statusMsg" style="font-size:12px; margin-top:10px; font-weight:bold;"></p>
     </div>
 </div>
@@ -53,7 +52,7 @@
         <input id="customer" placeholder="കസ്റ്റമർ പേര്" oninput="updateTabName()">
         
         <div class="smart-box">
-            <textarea id="smartPaste" placeholder="ലിസ്റ്റ് ഇവിടെ പേസ്റ്റ് ചെയ്യുക (No Count)..." style="height:50px; font-size:13px; margin:0;"></textarea>
+            <textarea id="smartPaste" placeholder="ലിസ്റ്റ് ഇവിടെ പേസ്റ്റ് ചെയ്യുക..." style="height:50px; font-size:13px; margin:0;"></textarea>
             <button style="background:var(--secondary); padding:8px; margin-top:5px; font-size:12px;" onclick="processSmartPaste()">SMART ADD</button>
         </div>
 
@@ -87,29 +86,16 @@
         <h3>Saved History</h3>
         <textarea id="resultPaste" placeholder="റിസൾട്ട് പേസ്റ്റ് ചെയ്യുക..." style="height:80px;"></textarea>
         <button style="background:var(--secondary);" onclick="checkWinners()">CHECK WINNERS</button>
-        
-        <div id="winnerSection" class="hidden">
-            <div id="winnerList" class="list"></div>
-            <button style="background:#25D366;" onclick="shareWinners()">SHARE WINNERS</button>
-        </div>
-
-        <div class="row" style="margin-top:10px;">
-            <button style="background:#673AB7;" onclick="renderSaved(true)">MERGE & SORT</button>
-            <button style="background:var(--secondary);" onclick="shareMerged()">WA SHARE MERGED</button>
-        </div>
+        <div id="winnerSection" class="hidden"><div id="winnerList" class="list"></div><button style="background:#25D366;" onclick="shareWinners()">SHARE WINNERS</button></div>
+        <div class="row" style="margin-top:10px;"><button style="background:#673AB7;" onclick="renderSaved(true)">MERGE & SORT</button><button style="background:var(--secondary);" onclick="shareMerged()">WA SHARE MERGED</button></div>
         <div class="list" id="savedList"></div>
         <div class="total-section"><span>GT</span><span id="savedTotal">0</span></div>
-        <div class="row">
-            <button style="background:#555;" onclick="backToMain()">BACK</button>
-            <button style="background:var(--danger);" onclick="clearAllHistory()">CLEAR ALL HISTORY</button>
-        </div>
+        <div class="row"><button style="background:#555;" onclick="backToMain()">BACK</button><button style="background:var(--danger);" onclick="clearAllHistory()">CLEAR ALL HISTORY</button></div>
     </div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        databaseURL: "https://surajlott-4a0b6-default-rtdb.firebaseio.com/"
-    };
+    const firebaseConfig = { databaseURL: "https://surajlott-4a0b6-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -117,132 +103,45 @@
         const phone = document.getElementById("loginPhone").value.trim();
         const msg = document.getElementById("statusMsg");
         if(!phone) { alert("മൊബൈൽ നമ്പർ നൽകുക"); return; }
-        msg.style.color = "orange";
-        msg.innerText = "Checking Access...";
+        msg.style.color = "orange"; msg.innerText = "Checking Access...";
         db.ref('users/' + phone).once('value').then((snapshot) => {
             const val = snapshot.val();
-            if(val && val.status === 'active') {
-                localStorage.setItem("lottery_user", phone);
-                showMain();
-                startRealtimeCheck(phone);
-            } else {
-                msg.style.color = "red";
-                msg.innerText = val ? "Access Blocked by Admin!" : "Number Not Registered!";
-            }
-        }).catch(err => { msg.innerText = "Error: Check Internet/Database Rules"; });
-    }
-
-    function showMain() {
-        document.getElementById("loginOverlay").classList.add("hidden");
-        document.getElementById("mainPage").classList.remove("hidden");
-        initTabs();
-    }
-
-    function logout() { localStorage.clear(); location.reload(); }
-
-    function startRealtimeCheck(phone) {
-        db.ref('users/' + phone + '/status').on('value', (snap) => {
-            if(snap.val() !== 'active') {
-                alert("നിങ്ങളുടെ ആക്സസ് അഡ്മിൻ റദ്ദാക്കിയിരിക്കുന്നു.");
-                localStorage.clear();
-                location.reload();
-            }
+            if(val && val.status === 'active') { localStorage.setItem("lottery_user", phone); showMain(); startRealtimeCheck(phone); }
+            else { msg.style.color = "red"; msg.innerText = val ? "Access Blocked!" : "Not Registered!"; }
         });
     }
 
+    function showMain() { document.getElementById("loginOverlay").classList.add("hidden"); document.getElementById("mainPage").classList.remove("hidden"); initTabs(); }
+    function logout() { localStorage.clear(); location.reload(); }
+    function startRealtimeCheck(phone) { db.ref('users/' + phone + '/status').on('value', (snap) => { if(snap.val() !== 'active') { alert("Access Revoked"); logout(); } }); }
+
     window.onload = function() {
         const saved = localStorage.getItem("lottery_user");
-        if(saved) {
-            db.ref('users/' + saved + '/status').once('value').then((snap) => {
-                if(snap.val() === 'active') {
-                    showMain();
-                    startRealtimeCheck(saved);
-                } else {
-                    localStorage.clear();
-                }
-            });
-        }
+        if(saved) db.ref('users/' + saved + '/status').once('value').then((snap) => { if(snap.val() === 'active') { showMain(); startRealtimeCheck(saved); } });
     }
 
     let customers = JSON.parse(localStorage.getItem("lottery_customers")) || [{name: "", temp: []}];
     let activeIndex = 0;
     let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
-    let mergedData = [];
     let isStepMode = false;
 
-    // --- മാറ്റങ്ങൾ വരുത്തിയ പുതിയ ഫംഗ്ഷനുകൾ താഴെ ---
-
-    // WhatsApp ഷെയർ ചെയ്യുമ്പോൾ സ്ക്രീൻ ക്ലിയർ ആക്കാൻ
-    function share(type) {
-        let name = document.getElementById("customer").value || "User";
-        let data = customers[activeIndex].temp;
-        if(data.length === 0) return;
-
-        // Recent ബട്ടണിലേക്ക് ഈ ഡാറ്റ സേവ് ചെയ്യുന്നു
-        localStorage.setItem("recent_tab_data", JSON.stringify(data));
-        localStorage.setItem("recent_tab_name", name);
-
-        let txt = `📝 *${name.toUpperCase()}*\n━━━━━━━━━━━━━━━\n`;
-        let total = 0;
-        for (let i = 0; i < data.length; i += 2) {
-            let i1 = data[i], i2 = data[i+1];
-            txt += `*${i1.n}*=${i1.c}`; total += Number(i1.c);
-            if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += Number(i2.c); } else txt += `\n`;
-        }
-        txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
-        
-        // WhatsApp ലിങ്ക്
-        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
-
-        // ഷെയർ ചെയ്ത ശേഷം കറന്റ് ടാബ് ക്ലിയർ ചെയ്യുന്നു
-        customers[activeIndex].temp = [];
-        renderLive();
-    }
-
-    // Recent ബട്ടൺ അമർത്തുമ്പോൾ അവസാന ഡാറ്റ തിരികെ കൊണ്ടുവരാൻ
-    function loadRecentTab() {
-        let lastData = localStorage.getItem("recent_tab_data");
-        let lastName = localStorage.getItem("recent_tab_name");
-        
-        if(lastData) {
-            if(confirm("അവസാനം അയച്ച ഡാറ്റ തിരികെ കൊണ്ടുവരണോ?")) {
-                customers[activeIndex].temp = JSON.parse(lastData);
-                customers[activeIndex].name = lastName || "";
-                document.getElementById("customer").value = lastName || "";
-                renderLive();
-                initTabs();
-            }
-        } else {
-            alert("Recent ഡാറ്റ ലഭ്യമല്ല!");
-        }
-    }
-
-    // --- ബാക്കി ഫംഗ്ഷനുകൾ (പഴയത് പോലെ തന്നെ) ---
-
-    document.getElementById("num").addEventListener("input", function() { 
-        if(this.value.length === 3) {
-            if(isStepMode) document.getElementById("endNum").focus();
-            else document.getElementById("count").focus();
-        }
+    document.getElementById("num").addEventListener("keyup", function(e) { 
+        if(this.value.length === 3) document.getElementById(isStepMode ? "endNum" : "count").focus();
+        if(e.key === "Enter") addEntry(); 
     });
+    document.getElementById("endNum").addEventListener("keyup", function(e) { if(e.key === "Enter") document.getElementById("count").focus(); });
+    document.getElementById("count").addEventListener("keyup", function(e) { if(e.key === "Enter") addEntry(); });
 
-    function toggleStepMode() {
-        isStepMode = !isStepMode;
-        document.getElementById("endNum").classList.toggle("hidden");
-        document.getElementById("gap").classList.toggle("hidden");
-        let btn = document.getElementById("stepToggle");
-        btn.innerText = isStepMode ? "NORMAL" : "STEP";
-        btn.style.background = isStepMode ? "#d32f2f" : "#4527a0";
-        document.getElementById("addBtn").innerText = isStepMode ? "ADD RANGE" : "ADD";
-    }
-
-    function processSmartPaste() {
-        let text = document.getElementById("smartPaste").value;
-        if(!text) return;
-        let regex = /(\d{3})[^\d]+(\d+)/g;
-        let match;
-        while ((match = regex.exec(text)) !== null) { addManual(match[1], match[2]); }
-        document.getElementById("smartPaste").value = "";
+    function addEntry() {
+        let start = document.getElementById("num").value, count = document.getElementById("count").value;
+        if(!start || !count) return;
+        if(isStepMode) {
+            let end = document.getElementById("endNum").value, gap = parseInt(document.getElementById("gap").value) || 1;
+            if(!end) return;
+            for(let i = parseInt(start); i <= parseInt(end); i += gap) addManual(i, count);
+        } else addManual(start, count);
+        document.getElementById("num").value = ""; document.getElementById("endNum").value = ""; document.getElementById("count").value = "";
+        document.getElementById("num").focus();
     }
 
     function addManual(n, c) {
@@ -251,122 +150,58 @@
         renderLive();
     }
 
-    function addEntry() {
-        let start = document.getElementById("num").value;
-        let count = document.getElementById("count").value;
-        if(!start || !count) return;
-        if(isStepMode) {
-            let end = document.getElementById("endNum").value;
-            let gap = parseInt(document.getElementById("gap").value) || 1;
-            if(!end) return;
-            for(let i = parseInt(start); i <= parseInt(end); i += gap) { addManual(i, count); }
-            toggleStepMode();
-        } else { addManual(start, count); }
-        document.getElementById("num").value = ""; document.getElementById("endNum").value = ""; document.getElementById("count").value = "";
-        document.getElementById("num").focus();
+    function share(type) {
+        let name = document.getElementById("customer").value || "User", data = customers[activeIndex].temp;
+        if(data.length === 0) return;
+        localStorage.setItem("recent_tab_data", JSON.stringify(data));
+        localStorage.setItem("recent_tab_name", name);
+        
+        // ബോൾഡ് ചിഹ്നങ്ങൾ (*) ഒഴിവാക്കി
+        let txt = `📝 ${name.toUpperCase()}\n━━━━━━━━━━━━━━━\n`, total = 0;
+        for (let i = 0; i < data.length; i += 2) {
+            let i1 = data[i], i2 = data[i+1];
+            txt += `${i1.n}=${i1.c}`; total += Number(i1.c);
+            if(i2) { txt += `  |  ${i2.n}=${i2.c}\n`; total += Number(i2.c); } else txt += `\n`;
+        }
+        txt += `━━━━━━━━━━━━━━━\n✅ TOTAL : ${total}`;
+        
+        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
+        customers[activeIndex].temp = []; renderLive();
     }
-
-    function boxEntry() {
-        let n = document.getElementById("num").value, c = document.getElementById("count").value;
-        if (n.length !== 3 || !c) return;
-        let res = new Set();
-        let p = (a, m = []) => { if (a.length === 0) res.add(m.join('')); else a.forEach((v, i) => { let cu = [...a]; cu.splice(i, 1); p(cu, [...m, v]); }); };
-        p(n.split(''));
-        res.forEach(v => addManual(v, c));
-        document.getElementById("num").value = ""; document.getElementById("count").value = "";
-    }
-
-    function renderLive() {
-        let h = "", t = 0;
-        customers[activeIndex].temp.slice().reverse().forEach((item, i) => {
-            h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:18px;">❌</button></div>`;
-            t += Number(item.c);
-        });
-        document.getElementById("liveList").innerHTML = h || "<p style='text-align:center; padding:20px; color:gray;'>ലിസ്റ്റ് കാലിയാണ്</p>";
-        document.getElementById("liveTotal").innerText = t;
-        localStorage.setItem("lottery_customers", JSON.stringify(customers));
-    }
-
-    function deleteEntry(idx) { if(confirm("ഈ എൻട്രി ഡിലീറ്റ് ചെയ്യണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
-    function deleteHistoryItem(idx) { if(confirm("ഡിലീറ്റ് ചെയ്യണോ?")) { permanent.splice(idx, 1); localStorage.setItem("perm_list", JSON.stringify(permanent)); renderSaved(); } }
-    function clearAllHistory() { if(confirm("മൊത്തം ഹിസ്റ്ററിയും ക്ലിയർ ചെയ്യണോ?")) { permanent = []; localStorage.setItem("perm_list", JSON.stringify([])); renderSaved(); } }
-    function resetTab() { if(confirm("ഈ ടാബ് ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
 
     function saveDay() { 
         if(customers[activeIndex].temp.length > 0) { 
             permanent = [...permanent, ...customers[activeIndex].temp]; 
             localStorage.setItem("perm_list", JSON.stringify(permanent)); 
-            customers[activeIndex].temp = []; renderLive(); alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
+            alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
+            renderLive();
         } 
     }
 
-    function checkWinners() {
-        let raw = document.getElementById("resultPaste").value;
-        let nums = raw.match(/\d{3}/g);
-        if(!nums) return;
-        let prizes = [5000, 500, 250, 100, 50];
-        let prizeMap = {};
-        nums.forEach((n, i) => { prizeMap[n] = (i < 5) ? prizes[i] : 20; });
-        let wins = permanent.filter(e => prizeMap[e.n]);
-        let h = "";
-        wins.forEach(w => { h += `<div class="item win-item"><span><b>${w.n}</b> (${w.c}) - ${w.cust}</span><span>₹${prizeMap[w.n] * w.c}</span></div>`; });
-        document.getElementById("winnerList").innerHTML = h || "<p style='padding:10px;'>വിജയികൾ ഇല്ല</p>";
-        document.getElementById("winnerSection").classList.remove("hidden");
-    }
-
-    function shareWinners() {
-        let txt = "🏆 *LOTTERY WINNERS*\n━━━━━━━━━━━━━━━\n" + document.getElementById("winnerList").innerText;
-        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
-    }
-
-    function renderSaved(merge = false) {
-        let data = [...permanent];
-        if (merge) {
-            let obj = {}; data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c));
-            data = Object.entries(obj).map(([n, c]) => ({n, c, cust: "Merged"}));
-            data.sort((a, b) => b.c - a.c);
-            mergedData = data;
+    function loadRecentTab() {
+        let lastData = localStorage.getItem("recent_tab_data"), lastName = localStorage.getItem("recent_tab_name");
+        if(lastData && confirm("അവസാനം അയച്ച ഡാറ്റ തിരികെ കൊണ്ടുവരണോ?")) {
+            customers[activeIndex].temp = JSON.parse(lastData);
+            customers[activeIndex].name = lastName || "";
+            document.getElementById("customer").value = lastName || "";
+            renderLive(); initTabs();
         }
-        let h = "", t = 0;
-        data.slice().reverse().forEach((i, idx) => {
-            h += `<div class="item"><span><b>${i.n}</b> - (${i.c}) <small>${i.cust}</small></span><button onclick="deleteHistoryItem(${data.length-1-idx})" style="color:gray; background:none; border:none; font-size:12px;">❌</button></div>`;
-            t += Number(i.c);
-        });
-        document.getElementById("savedList").innerHTML = h;
-        document.getElementById("savedTotal").innerText = t;
     }
 
-    function shareMerged() {
-        if(mergedData.length === 0) { alert("ആദ്യം Merge & Sort ചെയ്യുക"); return; }
-        let min = prompt("Min Count:", "1"); if(min === null) return;
-        let filtered = mergedData.filter(i => i.c >= Number(min));
-        let txt = `📝 *MERGED LIST*\n━━━━━━━━━━━━━━━\n`;
-        let total = 0;
-        for (let i = 0; i < filtered.length; i += 2) {
-            let i1 = filtered[i], i2 = filtered[i+1];
-            txt += `*${i1.n}*=${i1.c}`; total += i1.c;
-            if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += i2.c; } else txt += `\n`;
-        }
-        txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
-        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
-    }
-
+    function toggleStepMode() { isStepMode = !isStepMode; document.getElementById("endNum").classList.toggle("hidden"); document.getElementById("gap").classList.toggle("hidden"); let btn = document.getElementById("stepToggle"); btn.innerText = isStepMode ? "NORMAL" : "STEP"; btn.style.background = isStepMode ? "#d32f2f" : "#4527a0"; }
+    function processSmartPaste() { let text = document.getElementById("smartPaste").value; if(!text) return; let regex = /(\d{3})[^\d]+(\d+)/g, match; while ((match = regex.exec(text)) !== null) addManual(match[1], match[2]); document.getElementById("smartPaste").value = ""; }
+    function boxEntry() { let n = document.getElementById("num").value, c = document.getElementById("count").value; if (n.length !== 3 || !c) return; let res = new Set(), p = (a, m = []) => { if (a.length === 0) res.add(m.join('')); else a.forEach((v, i) => { let cu = [...a]; cu.splice(i, 1); p(cu, [...m, v]); }); }; p(n.split('')); res.forEach(v => addManual(v, c)); document.getElementById("num").value = ""; document.getElementById("count").value = ""; }
+    function renderLive() { let h = "", t = 0; customers[activeIndex].temp.slice().reverse().forEach((item, i) => { h += `<div class="item"><span>${item.n} - (<b>${item.c}</b>)</span><button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:18px;">❌</button></div>`; t += Number(item.c); }); document.getElementById("liveList").innerHTML = h || "<p style='text-align:center; padding:20px; color:gray;'>ലിസ്റ്റ് കാലിയാണ്</p>"; document.getElementById("liveTotal").innerText = t; localStorage.setItem("lottery_customers", JSON.stringify(customers)); }
+    function deleteEntry(idx) { if(confirm("ഡിലീറ്റ് ചെയ്യണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
+    function renderSaved(merge = false) { let data = [...permanent]; if (merge) { let obj = {}; data.forEach(i => obj[i.n] = (obj[i.n] || 0) + Number(i.c)); data = Object.entries(obj).map(([n, c]) => ({n, c, cust: "Merged"})); data.sort((a, b) => b.c - a.c); mergedData = data; } let h = "", t = 0; data.slice().reverse().forEach((i, idx) => { h += `<div class="item"><span><b>${i.n}</b> - (${i.c}) <small>${i.cust}</small></span></div>`; t += Number(i.c); }); document.getElementById("savedList").innerHTML = h; document.getElementById("savedTotal").innerText = t; }
     function openHistory() { document.getElementById("mainPage").classList.add("hidden"); document.getElementById("historyPage").classList.remove("hidden"); renderSaved(); }
     function backToMain() { document.getElementById("historyPage").classList.add("hidden"); document.getElementById("mainPage").classList.remove("hidden"); }
-    
-    function initTabs() {
-        let h = "";
-        customers.forEach((c, i) => h += `<div class="tab ${i === activeIndex ? 'active' : ''}" onclick="switchTab(${i})">${c.name || 'New Customer'}</div>`);
-        h += `<div class="tab" onclick="addNewCustomer()" style="background:var(--secondary);">+ ADD</div>`;
-        document.getElementById("tabsList").innerHTML = h;
-        document.getElementById("customer").value = customers[activeIndex].name;
-        renderLive();
-    }
-    
+    function initTabs() { let h = ""; customers.forEach((c, i) => h += `<div class="tab ${i === activeIndex ? 'active' : ''}" onclick="switchTab(${i})">${c.name || 'New Customer'}</div>`); h += `<div class="tab" onclick="addNewCustomer()" style="background:var(--secondary);">+ ADD</div>`; document.getElementById("tabsList").innerHTML = h; document.getElementById("customer").value = customers[activeIndex].name; renderLive(); }
     function switchTab(i) { activeIndex = i; initTabs(); }
     function addNewCustomer() { customers.push({name: "", temp: []}); activeIndex = customers.length - 1; initTabs(); }
     function updateTabName() { customers[activeIndex].name = document.getElementById("customer").value; localStorage.setItem("lottery_customers", JSON.stringify(customers)); initTabs(); }
-
+    function clearAllHistory() { if(confirm("ക്ലിയർ ചെയ്യണോ?")) { permanent = []; localStorage.setItem("perm_list", JSON.stringify([])); renderSaved(); } }
+    function resetTab() { if(confirm("ഈ ടാബ് ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
 </script>
 </body>
 </html>
