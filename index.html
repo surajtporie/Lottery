@@ -45,6 +45,7 @@
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0; color:var(--primary);">Lottery Smart Pro</h3>
+            <button onclick="loadRecentTab()" style="width:auto; font-size:10px; background:#f39c12; color:white; padding:5px 10px; margin-right:5px;">RECENT</button>
             <button onclick="logout()" style="width:auto; font-size:10px; background:#444; padding:5px 10px;">LOGOUT</button>
         </div>
         
@@ -106,22 +107,18 @@
 </div>
 
 <script>
-    // --- നിങ്ങളുടെ FIREBASE URL ഇവിടെ ചേർത്തു ---
     const firebaseConfig = {
         databaseURL: "https://surajlott-4a0b6-default-rtdb.firebaseio.com/"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- ലോഗിൻ സിസ്റ്റം ---
     function checkLogin() {
         const phone = document.getElementById("loginPhone").value.trim();
         const msg = document.getElementById("statusMsg");
         if(!phone) { alert("മൊബൈൽ നമ്പർ നൽകുക"); return; }
-        
         msg.style.color = "orange";
         msg.innerText = "Checking Access...";
-        
         db.ref('users/' + phone).once('value').then((snapshot) => {
             const val = snapshot.val();
             if(val && val.status === 'active') {
@@ -132,9 +129,7 @@
                 msg.style.color = "red";
                 msg.innerText = val ? "Access Blocked by Admin!" : "Number Not Registered!";
             }
-        }).catch(err => {
-            msg.innerText = "Error: Check Internet/Database Rules";
-        });
+        }).catch(err => { msg.innerText = "Error: Check Internet/Database Rules"; });
     }
 
     function showMain() {
@@ -169,21 +164,67 @@
         }
     }
 
-    // --- ആപ്പ് ഫംഗ്ഷനുകൾ ---
     let customers = JSON.parse(localStorage.getItem("lottery_customers")) || [{name: "", temp: []}];
     let activeIndex = 0;
     let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
     let mergedData = [];
     let isStepMode = false;
 
-    // Auto Focus Logic
+    // --- മാറ്റങ്ങൾ വരുത്തിയ പുതിയ ഫംഗ്ഷനുകൾ താഴെ ---
+
+    // WhatsApp ഷെയർ ചെയ്യുമ്പോൾ സ്ക്രീൻ ക്ലിയർ ആക്കാൻ
+    function share(type) {
+        let name = document.getElementById("customer").value || "User";
+        let data = customers[activeIndex].temp;
+        if(data.length === 0) return;
+
+        // Recent ബട്ടണിലേക്ക് ഈ ഡാറ്റ സേവ് ചെയ്യുന്നു
+        localStorage.setItem("recent_tab_data", JSON.stringify(data));
+        localStorage.setItem("recent_tab_name", name);
+
+        let txt = `📝 *${name.toUpperCase()}*\n━━━━━━━━━━━━━━━\n`;
+        let total = 0;
+        for (let i = 0; i < data.length; i += 2) {
+            let i1 = data[i], i2 = data[i+1];
+            txt += `*${i1.n}*=${i1.c}`; total += Number(i1.c);
+            if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += Number(i2.c); } else txt += `\n`;
+        }
+        txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
+        
+        // WhatsApp ലിങ്ക്
+        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
+
+        // ഷെയർ ചെയ്ത ശേഷം കറന്റ് ടാബ് ക്ലിയർ ചെയ്യുന്നു
+        customers[activeIndex].temp = [];
+        renderLive();
+    }
+
+    // Recent ബട്ടൺ അമർത്തുമ്പോൾ അവസാന ഡാറ്റ തിരികെ കൊണ്ടുവരാൻ
+    function loadRecentTab() {
+        let lastData = localStorage.getItem("recent_tab_data");
+        let lastName = localStorage.getItem("recent_tab_name");
+        
+        if(lastData) {
+            if(confirm("അവസാനം അയച്ച ഡാറ്റ തിരികെ കൊണ്ടുവരണോ?")) {
+                customers[activeIndex].temp = JSON.parse(lastData);
+                customers[activeIndex].name = lastName || "";
+                document.getElementById("customer").value = lastName || "";
+                renderLive();
+                initTabs();
+            }
+        } else {
+            alert("Recent ഡാറ്റ ലഭ്യമല്ല!");
+        }
+    }
+
+    // --- ബാക്കി ഫംഗ്ഷനുകൾ (പഴയത് പോലെ തന്നെ) ---
+
     document.getElementById("num").addEventListener("input", function() { 
         if(this.value.length === 3) {
             if(isStepMode) document.getElementById("endNum").focus();
             else document.getElementById("count").focus();
         }
     });
-    document.getElementById("count").addEventListener("keypress", (e) => { if(e.key === "Enter") addEntry(); });
 
     function toggleStepMode() {
         isStepMode = !isStepMode;
@@ -305,21 +346,6 @@
             let i1 = filtered[i], i2 = filtered[i+1];
             txt += `*${i1.n}*=${i1.c}`; total += i1.c;
             if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += i2.c; } else txt += `\n`;
-        }
-        txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
-        window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
-    }
-
-    function share(type) {
-        let name = document.getElementById("customer").value || "User";
-        let data = customers[activeIndex].temp;
-        if(data.length === 0) return;
-        let txt = `📝 *${name.toUpperCase()}*\n━━━━━━━━━━━━━━━\n`;
-        let total = 0;
-        for (let i = 0; i < data.length; i += 2) {
-            let i1 = data[i], i2 = data[i+1];
-            txt += `*${i1.n}*=${i1.c}`; total += Number(i1.c);
-            if(i2) { txt += `  |  *${i2.n}*=${i2.c}\n`; total += Number(i2.c); } else txt += `\n`;
         }
         txt += `━━━━━━━━━━━━━━━\n✅ *TOTAL : ${total}*`;
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
