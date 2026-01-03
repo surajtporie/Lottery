@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lottery Pro Max - Fixed Layout</title>
+<title>Lottery Pro Max - Smart Paste</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -19,16 +19,14 @@
     .tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px; }
     .tab { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .tab.active { background: var(--primary); color: white; }
-    
-    /* List Layout Fixed */
     .list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #181818; }
     .item { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--border); }
     .item-text { font-family: 'Courier New', Courier, monospace; font-size: 17px; font-weight: bold; color: #fff; white-space: nowrap; }
-    
     .total-section { display: flex; justify-content: space-between; padding: 12px; background: #333; border-radius: 8px; margin-top: 10px; font-weight: bold; border: 1px solid var(--primary); }
     .hidden { display: none !important; }
     #loginOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#121212; z-index:9999; display:flex; justify-content:center; align-items:center; }
     #posSelect { width: 85px; background: #455a64; font-weight: bold; }
+    .smart-box { background: #263238; padding: 10px; border-radius: 8px; border: 1px dashed var(--secondary); margin-top: 10px; }
 </style>
 </head>
 <body onload="checkAutoLogin()">
@@ -83,6 +81,11 @@
             <button style="background:#455a64; flex: 2;" onclick="openHistory()">HISTORY & MERGE</button>
             <button style="background:var(--danger); flex: 1;" onclick="resetTab()">CLEAR TAB</button>
         </div>
+
+        <div class="smart-box">
+            <textarea id="smartPasteArea" placeholder="ലിസ്റ്റ് ഇവിടെ പേസ്റ്റ് ചെയ്യുക (3-Digit മാത്രം എടുക്കും)..." style="height: 60px; font-size: 13px; margin: 0;"></textarea>
+            <button style="background:var(--secondary); padding: 8px; margin-top: 5px; font-size: 12px; width: 100%;" onclick="processSmartPaste()">SMART ADD (3-DIGIT ONLY)</button>
+        </div>
     </div>
 </div>
 
@@ -126,7 +129,32 @@
     let permanent = JSON.parse(localStorage.getItem("perm_list")) || [];
     let isStepMode = false;
 
-    // Enter Key Navigation
+    // Smart Paste Logic
+    function processSmartPaste() {
+        let text = document.getElementById("smartPasteArea").value;
+        if(!text) return;
+        
+        // Regex: Matches exactly 3 digits, followed by any non-digit separator, then digits (count)
+        // This will find "123*2", "236 3", "475-5" but ignore "A-5 10" or "BC 22"
+        let regex = /(?:^|[^\d])(\d{3})(?:[^\d]+)(\d+)(?=[^\d]|$)/g;
+        let match;
+        let addedCount = 0;
+
+        while ((match = regex.exec(text)) !== null) {
+            let num = match[1];
+            let count = match[2];
+            addManual("ABC", num, count);
+            addedCount++;
+        }
+
+        if(addedCount > 0) {
+            document.getElementById("smartPasteArea").value = "";
+            alert(addedCount + " നമ്പറുകൾ ആഡ് ചെയ്തു.");
+        } else {
+            alert("3-Digit നമ്പറുകൾ ഒന്നും കണ്ടെത്താനായില്ല.");
+        }
+    }
+
     document.getElementById("num").addEventListener("keyup", function(e) { 
         if(this.value.length === this.maxLength) document.getElementById(isStepMode ? "endNum" : "count").focus();
         if(e.key === "Enter") addEntry(); 
@@ -161,10 +189,9 @@
     function renderLive() {
         let h = "", t = 0;
         customers[activeIndex].temp.slice().reverse().forEach((item, i) => {
-            // Updated Format: All in one line
             h += `<div class="item">
                     <span class="item-text">${item.p} ${item.n} -- ${item.c}</span>
-                    <button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:20px;">❌</button>
+                    <button onclick="deleteEntry(${customers[activeIndex].temp.length-1-i})" style="color:red; background:none; border:none; font-size:20px;">✖</button>
                   </div>`;
             t += item.c;
         });
@@ -173,8 +200,8 @@
         localStorage.setItem("lottery_customers", JSON.stringify(customers));
     }
 
-    function deleteEntry(idx) { if(confirm("ഈ നമ്പർ ഒഴിവാക്കണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
-    function resetTab() { if(confirm("ഈ ടാബിലെ വിവരങ്ങൾ പൂർണ്ണമായും ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
+    function deleteEntry(idx) { if(confirm("ഡിലീറ്റ് ചെയ്യണോ?")) { customers[activeIndex].temp.splice(idx, 1); renderLive(); } }
+    function resetTab() { if(confirm("ടാബ് ക്ലിയർ ചെയ്യണോ?")) { customers[activeIndex].temp = []; renderLive(); } }
 
     function share() {
         let name = document.getElementById("customer").value || "User", data = customers[activeIndex].temp;
@@ -182,7 +209,6 @@
         localStorage.setItem("recent_tab_data", JSON.stringify(data));
         let txt = `📝 ${name.toUpperCase()}\n------------------------------\n`, total = 0;
         data.forEach((item, index) => {
-            if (index > 0 && index % 10 === 0) txt += `\n`;
             txt += `${item.p.padEnd(3, ' ')}    ${item.n.padEnd(3, ' ')} - ${item.c}\n`;
             total += item.c;
         });
@@ -200,8 +226,8 @@
             else merged[key] = { p: item.p, n: item.n, c: item.c };
         });
         let list = Object.values(merged).filter(i => i.c >= min).sort((a,b) => a.n.localeCompare(b.n));
-        if(list.length === 0) { alert("നമ്പറുകൾ ഒന്നുമില്ല!"); return; }
-        let txt = `📊 MERGED HISTORY (Min: ${min})\n------------------\n`, gt = 0;
+        if(list.length === 0) { alert("ലിസ്റ്റ് കാലിയാണ്!"); return; }
+        let txt = `📊 MERGED HISTORY\n------------------\n`, gt = 0;
         list.forEach(i => { txt += `${i.p} ${i.n} - ${i.c}\n`; gt += i.c; });
         txt += `------------------\nGT: ${gt}`;
         window.location.href = "whatsapp://send?text=" + encodeURIComponent(txt);
@@ -227,7 +253,7 @@
         if(customers[activeIndex].temp.length > 0) {
             permanent = [...permanent, ...customers[activeIndex].temp]; 
             localStorage.setItem("perm_list", JSON.stringify(permanent)); 
-            alert("History-ലേക്ക് സേവ് ചെയ്തു!"); 
+            alert("ഹിസ്റ്ററി സേവ് ചെയ്തു!"); 
         }
     }
 
@@ -245,7 +271,7 @@
     function toggleStepMode() { isStepMode = !isStepMode; document.getElementById("endNum").classList.toggle("hidden"); document.getElementById("gap").classList.toggle("hidden"); document.getElementById("stepToggle").innerText = isStepMode ? "NORMAL" : "STEP"; }
     function openHistory() { document.getElementById("mainPage").classList.add("hidden"); document.getElementById("historyPage").classList.remove("hidden"); renderSaved(); }
     function backToMain() { document.getElementById("historyPage").classList.add("hidden"); document.getElementById("mainPage").classList.remove("hidden"); }
-    function clearAllHistory() { if(confirm("മുഴുവൻ ഹിസ്റ്ററിയും ക്ലിയർ ചെയ്യണോ?")) { permanent=[]; localStorage.setItem("perm_list", "[]"); renderSaved(); } }
+    function clearAllHistory() { if(confirm("എല്ലാം ക്ലിയർ ചെയ്യണോ?")) { permanent=[]; localStorage.setItem("perm_list", "[]"); renderSaved(); } }
     function loadRecentTab() { let last = localStorage.getItem("recent_tab_data"); if(last) { customers[activeIndex].temp = JSON.parse(last); renderLive(); } }
     function boxEntry() { let n = document.getElementById("num").value, c = document.getElementById("count").value; if (n.length !== 3 || !c) return; let res = new Set(), p = (a, m = []) => { if (a.length === 0) res.add(m.join('')); else a.forEach((v, i) => { let cu = [...a]; cu.splice(i, 1); p(cu, [...m, v]); }); }; p(n.split('')); res.forEach(v => addManual("ABC", v, c)); document.getElementById("num").value = ""; document.getElementById("count").value = ""; }
     function scanImage(input) { if (input.files && input.files[0]) { Tesseract.recognize(input.files[0], 'eng').then(({ data: { text } }) => { let regex = /(\d{3})[^\d]+(\d+)/g, match; while ((match = regex.exec(text)) !== null) addManual("ABC", match[1], match[2]); }); } }
